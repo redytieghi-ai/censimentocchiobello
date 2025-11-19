@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Scatole</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { 
+            background: white; 
+            border-radius: 1rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 { font-size: 2rem; font-weight: bold; color: #1f2937; margin-bottom: 1rem; }
+        h2 { font-size: 1.5rem; font-weight: bold; color: #1f2937; margin-bottom: 1rem; }
+        h3 { font-size: 1.2rem; font-weight: bold; color: #1f2937; margin-bottom: 0.75rem; }
+        
+        .fixed-fields {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+        
+        label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+        .btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-primary { background: #6366f1; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-info { background: #3b82f6; color: white; }
+        
+        .hidden { display: none !important; }
+        
+        video { width: 100%; border-radius: 0.75rem; background: black; }
+        .video-container { position: relative; background: black; border-radius: 0.75rem; margin-bottom: 1rem; }
+        
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            background: #dbeafe;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+        }
+        .loading-text {
+            font-weight: bold;
+            color: #1e40af;
+            font-size: 1.125rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .result-img { width: 100%; height: 200px; object-fit: cover; border-radius: 0.75rem; margin-bottom: 1rem; }
+        
+        .field-box {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .field-label { font-size: 0.75rem; font-weight: bold; color: #6b7280; margin-bottom: 0.25rem; }
+        .field-value { font-size: 1rem; font-weight: 600; color: #111827; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead { background: #e0e7ff; }
+        th { padding: 0.75rem; text-align: left; font-weight: bold; color: #1f2937; }
+        td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+        tbody tr:nth-child(even) { background: #f9fafb; }
+        tbody tr:hover { background: #f3f4f6; }
+        
+        .overflow-x { overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <h1>📦 Scanner Scatole Archivio</h1>
+            
+            <!-- Campi Fissi -->
+            <div class="fixed-fields">
+                <h3>⚙️ Campi Fissi (modifica tra i pool di scatole)</h3>
+                <div class="grid-2">
+                    <div>
+                        <label>TRASFERIMENTO</label>
+                        <input type="text" id="trasferimento" placeholder="Es: T001">
+                    </div>
+                    <div>
+                        <label>TESTA BANCALE</label>
+                        <input type="text" id="testaBancale" placeholder="Es: TB-A">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pulsanti Azione -->
+            <div class="btn-group">
+                <button onclick="avviaCamera()" id="btnAvvia" class="btn btn-primary">
+                    📷 Avvia Scansione
+                </button>
+                
+                <button onclick="esportaExcel()" class="btn btn-success">
+                    📥 Esporta Excel (<span id="contatore">0</span>)
+                </button>
+                
+                <button onclick="pulisciDB()" class="btn btn-danger">
+                    🗑️ Pulisci Database
+                </button>
+            </div>
+        </div>
+
+        <!-- Area Camera -->
+        <div id="areaCamera" class="card hidden">
+            <div class="video-container">
+                <video id="video" autoplay playsinline muted></video>
+            </div>
+            <div class="btn-group">
+                <button onclick="cattura()" id="btnCattura" class="btn btn-info">
+                    📸 Scatta e Analizza
+                </button>
+                <button onclick="fermaCamera()" class="btn btn-danger">
+                    ❌ Annulla
+                </button>
+            </div>
+            <div id="msgAnalisi" class="loading hidden">
+                <div class="loading-text">🔍 Analisi in corso...</div>
+            </div>
+        </div>
+
+        <canvas id="canvas" style="display: none;"></canvas>
+
+        <!-- Area Risultato -->
+        <div id="areaRisultato" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>✅ Risultato Scansione</h2>
+                <button onclick="modifica()" id="btnModifica" class="btn btn-info" style="flex: none; min-width: auto;">
+                    ✏️ Modifica
+                </button>
+            </div>
+
+            <div id="campi" class="grid-2" style="margin-bottom: 1.5rem;"></div>
+
+            <div class="btn-group">
+                <button onclick="conferma()" class="btn btn-success">
+                    ✅ Conferma e Salva
+                </button>
+                <button onclick="annulla()" class="btn btn-secondary">
+                    ❌ Annulla
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista Scatole -->
+        <div id="listaScatole" class="card hidden">
+            <h2>📋 Scatole Scansionate (<span id="contatore2">0</span>)</h2>
+            <div class="overflow-x">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Unità Op.</th>
+                            <th>Classe</th>
+                            <th>Data Da</th>
+                            <th>Data A</th>
+                            <th>Rif. Da</th>
+                            <th>Rif. A</th>
+                            <th>Trasf.</th>
+                            <th>Testa B.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabella"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var db = [];
+        var stream = null;
+        var scan = null;
+        var editing = false;
+
+        carica();
+
+        function carica() {
+            var saved = localStorage.getItem("db");
+            if (saved) {
+                db = JSON.parse(saved);
+                aggiornaUI();
+            }
+            var trasf = localStorage.getItem("trasferimento");
+            var testa = localStorage.getItem("testaBancale");
+            if (trasf) document.getElementById("trasferimento").value = trasf;
+            if (testa) document.getElementById("testaBancale").value = testa;
+        }
+
+        function salva() {
+            localStorage.setItem("db", JSON.stringify(db));
+            localStorage.setItem("trasferimento", document.getElementById("trasferimento").value);
+            localStorage.setItem("testaBancale", document.getElementById("testaBancale").value);
+            aggiornaUI();
+        }
+
+        function avviaCamera() {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1920 }, 
+                    height: { ideal: 1080 }
+                }
+            })
+            .then(function(s) {
+                stream = s;
+                document.getElementById("video").srcObject = s;
+                document.getElementById("areaCamera").classList.remove("hidden");
+                document.getElementById("btnAvvia").classList.add("hidden");
+            })
+            .catch(function(e) {
+                alert("Errore camera: " + e.message);
+            });
+        }
+
+        function fermaCamera() {
+            if (stream) {
+                stream.getTracks().forEach(function(t) { t.stop(); });
+                stream = null;
+            }
+            document.getElementById("areaCamera").classList.add("hidden");
+            document.getElementById("btnAvvia").classList.remove("hidden");
+        }
+
+        function cattura() {
+            var vid = document.getElementById("video");
+            var cvs = document.getElementById("canvas");
+            var ctx = cvs.getContext("2d");
+
+            cvs.width = vid.videoWidth;
+            cvs.height = vid.videoHeight;
+            ctx.drawImage(vid, 0, 0);
+
+            cvs.toBlob(function(blob) {
+                analizza(blob);
+            }, "image/jpeg", 0.95);
+        }
+
+        function analizza(blob) {
+            document.getElementById("msgAnalisi").classList.remove("hidden");
+            document.getElementById("btnCattura").disabled = true;
+
+            var reader = new FileReader();
+            reader.onload = function() {
+                var b64 = reader.result.split(",")[1];
+
+                fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1500,
+                        messages: [{
+                            role: "user",
+                            content: [
+                                { 
+                                    type: "image", 
+                                    source: { type: "base64", media_type: "image/jpeg", data: b64 } 
+                                },
+                                { 
+                                    type: "text", 
+                                    text: "Analizza questa scatola ed estrai: unitaOperativa, classe, dataDa, dataA, riferimentoDa, riferimentoA. REGOLE: se trovi solo anno (es 2022) metti dataDa=01/01/2022 e dataA=31/12/2022. Se trovi mese e anno (es Marzo 2022) metti dataDa=01/03/2022 e dataA=31/03/2022. Formato date sempre GG/MM/AAAA. Rispondi SOLO con JSON valido senza testo aggiuntivo."
+                                }
+                            ]
+                        }]
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var txt = data.content[0].text;
+                    var clean = txt.replace(/```json|```/g, "").trim();
+                    var parsed = JSON.parse(clean);
+
+                    scan = {
+                        unitaOperativa: parsed.unitaOperativa || "",
+                        classe: parsed.classe || "",
+                        dataDa: parsed.dataDa || "",
+                        dataA: parsed.dataA || "",
+                        riferimentoDa: parsed.riferimentoDa || "",
+                        riferimentoA: parsed.riferimentoA || "",
+                        trasferimento: document.getElementById("trasferimento").value,
+                        testaBancale: document.getElementById("testaBancale").value
+                    };
+
+                    mostra();
+                    fermaCamera();
+                })
+                .catch(function(e) {
+                    alert("Errore analisi: " + e.message);
+                    document.getElementById("msgAnalisi").classList.add("hidden");
+                    document.getElementById("btnCattura").disabled = false;
+                })
+                .finally(function() {
+                    document.getElementById("msgAnalisi").classList.add("hidden");
+                    document.getElementById("btnCattura").disabled = false;
+                });
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        function mostra() {
+            document.getElementById("areaRisultato").classList.remove("hidden");
+
+            var fields = [
+                { label: "UNITA OPERATIVA", key: "unitaOperativa" },
+                { label: "CLASSE", key: "classe" },
+                { label: "DATA DA", key: "dataDa" },
+                { label: "DATA A", key: "dataA" },
+                { label: "RIFERIMENTO DA", key: "riferimentoDa" },
+                { label: "RIFERIMENTO A", key: "riferimentoA" },
+                { label: "TRASFERIMENTO", key: "trasferimento" },
+                { label: "TESTA BANCALE", key: "testaBancale" }
+            ];
+
+            var html = "";
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i];
+                var val = scan[f.key] || "Non rilevato";
+                html += "<div class=\"field-box\">";
+                html += "<div class=\"field-label\">" + f.label + "</div>";
+                html += "<div class=\"field-value\" id=\"field-" + f.key + "\">" + val + "</div>";
+                html += "</div>";
+            }
+            document.getElementById("campi").innerHTML = html;
+
+            editing = false;
+            document.getElementById("btnModifica").classList.remove("hidden");
+        }
+
+        function modifica() {
+            editing = true;
+            document.getElementById("btnModifica").classList.add("hidden");
+
+            var fields = [
+                { label: "UNITA OPERATIVA", key: "unitaOperativa" },
+                { label: "CLASSE", key: "classe" },
+                { label: "DATA DA", key: "dataDa" },
+                { label: "DATA A", key: "dataA" },
+                { label: "RIFERIMENTO DA", key: "riferimentoDa" },
+                { label: "RIFERIMENTO A", key: "riferimentoA" },
+                { label: "TRASFERIMENTO", key: "trasferimento" },
+                { label: "TESTA BANCALE", key: "testaBancale" }
+            ];
+
+            var html = "";
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i];
+                var val = scan[f.key] || "";
+                html += "<div class=\"field-box\">";
+                html += "<label>" + f.label + "</label>";
+                html += "<input type=\"text\" id=\"input-" + f.key + "\" value=\"" + val + "\">";
+                html += "</div>";
+            }
+            document.getElementById("campi").innerHTML = html;
+        }
+
+        function conferma() {
+            if (editing) {
+                scan.unitaOperativa = document.getElementById("input-unitaOperativa").value;
+                scan.classe = document.getElementById("input-classe").value;
+                scan.dataDa = document.getElementById("input-dataDa").value;
+                scan.dataA = document.getElementById("input-dataA").value;
+                scan.riferimentoDa = document.getElementById("input-riferimentoDa").value;
+                scan.riferimentoA = document.getElementById("input-riferimentoA").value;
+                scan.trasferimento = document.getElementById("input-trasferimento").value;
+                scan.testaBancale = document.getElementById("input-testaBancale").value;
+            }
+
+            db.push({
+                unitaOperativa: scan.unitaOperativa,
+                classe: scan.classe,
+                dataDa: scan.dataDa,
+                dataA: scan.dataA,
+                riferimentoDa: scan.riferimentoDa,
+                riferimentoA: scan.riferimentoA,
+                trasferimento: scan.trasferimento,
+                testaBancale: scan.testaBancale,
+                id: Date.now(),
+                timestamp: new Date().toISOString()
+            });
+
+            salva();
+            annulla();
+            alert("Scatola salvata! Puoi modificare TRASFERIMENTO e TESTA BANCALE per il prossimo pool.");
+        }
+
+        function annulla() {
+            document.getElementById("areaRisultato").classList.add("hidden");
+            document.getElementById("btnAvvia").classList.remove("hidden");
+            scan = null;
+            editing = false;
+        }
+
+        function esportaExcel() {
+            if (db.length === 0) {
+                alert("Nessun dato da esportare");
+                return;
+            }
+
+            var rows = ["UNITA OPERATIVA;CLASSE;DATA DA;DATA A;RIFERIMENTO DA;RIFERIMENTO A;TRASFERIMENTO;TESTA BANCALE;DATA SCANSIONE"];
+            for (var i = 0; i < db.length; i++) {
+                var d = db[i];
+                rows.push([
+                    d.unitaOperativa || "",
+                    d.classe || "",
+                    d.dataDa || "",
+                    d.dataA || "",
+                    d.riferimentoDa || "",
+                    d.riferimentoA || "",
+                    d.trasferimento || "",
+                    d.testaBancale || "",
+                    new Date(d.timestamp).toLocaleString("it-IT")
+                ].join(";"));
+            }
+
+            var csv = rows.join("\n");
+            var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "scatole_" + new Date().toISOString().split("T")[0] + ".csv";
+            link.click();
+        }
+
+        function pulisciDB() {
+            if (confirm("Eliminare tutti i dati? Questa azione non puo essere annullata.")) {
+                db = [];
+                localStorage.removeItem("db");
+                aggiornaUI();
+                alert("Database pulito!");
+            }
+        }
+
+        function aggiornaUI() {
+            document.getElementById("contatore").textContent = db.length;
+            document.getElementById("contatore2").textContent = db.length;
+
+            if (db.length > 0) {
+                document.getElementById("listaScatole").classList.remove("hidden");
+                var html = "";
+                for (var i = 0; i < db.length; i++) {
+                    var d = db[i];
+                    html += "<tr>";
+                    html += "<td>" + (d.unitaOperativa || "-") + "</td>";
+                    html += "<td>" + (d.classe || "-") + "</td>";
+                    html += "<td>" + (d.dataDa || "-") + "</td>";
+                    html += "<td>" + (d.dataA || "-") + "</td>";
+                    html += "<td>" + (d.riferimentoDa || "-") + "</td>";
+                    html += "<td>" + (d.riferimentoA || "-") + "</td>";
+                    html += "<td>" + (d.trasferimento || "-") + "</td>";
+                    html += "<td>" + (d.testaBancale || "-") + "</td>";
+                    html += "</tr>";
+                }
+                document.getElementById("tabella").innerHTML = html;
+            } else {
+                document.getElementById("listaScatole").classList.add("hidden");
+            }
+        }
+    </script>
+</body>
+</html>
